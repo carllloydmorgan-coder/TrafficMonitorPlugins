@@ -1,0 +1,41 @@
+name: Build CpuMonitor plugin
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+
+jobs:
+  build:
+    # windows-latest moved to Visual Studio 2026 in June 2026, which dropped the
+    # MFC libraries this project needs (MSB8041). windows-2022 still has VS2022 + MFC.
+    runs-on: windows-2022
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: x64
+            out_dir: 'Bin\x64\Release'
+          - platform: x86
+            out_dir: 'Bin\Release'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      # The project is built directly rather than through the solution, so the
+      # solution file never has to be edited. SolutionDir is normally supplied
+      # by the solution, so it is passed explicitly here; the project uses it
+      # to find the include folder and to place its output.
+      - name: Build CpuMonitor plugin
+        run: msbuild Plugins\CpuMonitor\CpuMonitor.vcxproj -p:Configuration=Release -p:Platform=${{ matrix.platform }} -p:PlatformToolset=v143 -p:SolutionDir=${{ github.workspace }}\ -m
+
+      - name: Upload CpuMonitor.dll
+        uses: actions/upload-artifact@v4
+        with:
+          name: CpuMonitor_${{ matrix.platform }}
+          path: ${{ matrix.out_dir }}\CpuMonitor.dll
+          if-no-files-found: error
