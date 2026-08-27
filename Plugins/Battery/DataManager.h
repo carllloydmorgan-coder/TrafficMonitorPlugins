@@ -52,6 +52,7 @@ public:
 
     SettingData m_setting_data;
     bool m_draw_taskbar_wnd{ false };   //当前是否正在绘制任务栏窗口（主窗口的皮肤布局尺寸固定，不放大图标）
+    int m_taskbar_item_height{ 0 };     //任务栏窗口中本项目的实际高度（绘制时记录），用于计算宽度时得知图标的实际尺寸
     SYSTEM_POWER_STATUS m_sysPowerStatus{};   // 系统电量信息
     ULONG_PTR m_gdiplusToken;
 
