@@ -1,0 +1,35 @@
+name: Build Battery plugin
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: x64
+            out_dir: 'Bin\x64\Release'
+          - platform: x86
+            out_dir: 'Bin\Release'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Battery plugin
+        run: msbuild TrafficMonitorPlugins.sln -t:Battery -p:Configuration=Release -p:Platform=${{ matrix.platform }} -p:PlatformToolset=v143 -m
+
+      - name: Upload Battery.dll
+        uses: actions/upload-artifact@v4
+        with:
+          name: Battery_${{ matrix.platform }}
+          path: ${{ matrix.out_dir }}\Battery.dll
+          if-no-files-found: error
