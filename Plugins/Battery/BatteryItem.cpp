@@ -16,7 +16,7 @@ namespace
     constexpr float BATTERY_ICON_SCALE{ 4.1f };
     //向右侧间隙借用的像素数（DPI缩放前）。任务栏各项目之间的间隙由主程序的“项目间距”设置决定，
     //图标会向右伸入间隙这么多像素，使电池图标与相邻项目看起来更近。设为0恢复正常间隙。
-    constexpr int BATTERY_GAP_BORROW_PIXELS{ 2 };
+    constexpr int BATTERY_GAP_BORROW_PIXELS{ 0 };
 
     //计算图标的实际绘制尺寸：按放大倍数计算，但不超过任务栏窗口中项目的实际高度
     inline int GetEffectiveIconSize()
