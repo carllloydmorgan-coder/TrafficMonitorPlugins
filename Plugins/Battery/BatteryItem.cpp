@@ -13,7 +13,7 @@ namespace
     //电池图标左右两侧的边距（基准尺寸下，单位：像素）
     constexpr float BATTERY_ICON_BASE_PADDING{ 2.0f };
     //电池图标的放大倍数。图标内部的电量指示、数值的位置都会按此倍数一起缩放
-    constexpr float BATTERY_ICON_SCALE{ 3.0f };
+    constexpr float BATTERY_ICON_SCALE{ 4.0f };
 
     //电池图标区域的宽度（已包含DPI缩放和放大倍数）
     inline int GetBatteryIconAreaWidth()
