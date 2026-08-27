@@ -103,6 +103,10 @@ void CBattery::OnExtenedInfo(ExtendedInfoIndex index, const wchar_t* data)
         g_data.LoadConfig(std::wstring(data));
 
         break;
+    case ITMPlugin::EI_DRAW_TASKBAR_WND:
+        //记录当前绘制的是任务栏窗口还是主窗口
+        g_data.m_draw_taskbar_wnd = (data != nullptr && data[0] == L'1');
+        break;
     default:
         break;
     }

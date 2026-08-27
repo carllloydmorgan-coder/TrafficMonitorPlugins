@@ -6,6 +6,22 @@
 
 static double battery_percent = 0.0;
 
+namespace
+{
+    //电池图标的基准尺寸（放大前的尺寸，单位：像素）
+    constexpr float BATTERY_ICON_BASE_SIZE{ 16.0f };
+    //电池图标左右两侧的边距（基准尺寸下，单位：像素）
+    constexpr float BATTERY_ICON_BASE_PADDING{ 2.0f };
+    //电池图标的放大倍数。图标内部的电量指示、数值的位置都会按此倍数一起缩放
+    constexpr float BATTERY_ICON_SCALE{ 2.5f };
+
+    //电池图标区域的宽度（已包含DPI缩放和放大倍数）
+    inline int GetBatteryIconAreaWidth()
+    {
+        return static_cast<int>(g_data.DPIF((BATTERY_ICON_BASE_SIZE + BATTERY_ICON_BASE_PADDING * 2) * BATTERY_ICON_SCALE));
+    }
+}
+
 CBatteryItem::CBatteryItem()
 {
     //设置一个定时器，让battery_percent的值每200毫秒加4，如果超100，则变为0
@@ -67,16 +83,18 @@ int CBatteryItem::GetItemWidthEx(void * hDC) const
     else
         sample_str = _T("100");
 
+    const int icon_area_width{ GetBatteryIconAreaWidth() };
+
     switch (g_data.m_setting_data.battery_type)
     {
     case BatteryType::NUMBER:
         return pDC->GetTextExtent(sample_str).cx;
     case BatteryType::ICON:
-        return g_data.DPI(20);
+        return icon_area_width;
     case BatteryType::NUMBER_BESIDE_ICON:
-        return g_data.DPI(20) + pDC->GetTextExtent(sample_str).cx;
+        return icon_area_width + pDC->GetTextExtent(sample_str).cx;
     }
-    return g_data.DPI(20) + pDC->GetTextExtent(sample_str).cx;
+    return icon_area_width + pDC->GetTextExtent(sample_str).cx;
 }
 
 void CBatteryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode)
@@ -85,15 +103,24 @@ void CBatteryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mod
     CDC* pDC = CDC::FromHandle((HDC)hDC);
     //矩形区域
     CRect rect(CPoint(x, y), CSize(w, h));
+    //只在任务栏窗口中放大图标，主窗口的皮肤布局尺寸是固定的，放大后会超出布局
+    const float scale{ g_data.m_draw_taskbar_wnd ? BATTERY_ICON_SCALE : 1.0f };
+    //计算电池图标的尺寸。图标放大后不能超出窗口的高度，否则会被裁剪
+    int icon_size{ static_cast<int>(g_data.DPIF(BATTERY_ICON_BASE_SIZE * scale)) };
+    if (rect.Height() > 0 && icon_size > rect.Height())
+        icon_size = rect.Height();
+    if (icon_size < 1)
+        icon_size = 1;
+    //1个基准像素对应的实际像素数。图标内部的各个尺寸都以此为基准计算，保持原来的比例
+    const float unit{ icon_size / BATTERY_ICON_BASE_SIZE };
     //绘制电池图标
     HICON hIcon;
     if (g_data.IsAcOnline())
-        hIcon = (dark_mode ? g_data.GetIcon(IDI_BATTERY_LIGHT_CHARGE) : g_data.GetIcon(IDI_BATTERY_DARK_CHARGE));
+        hIcon = (dark_mode ? g_data.GetIcon(IDI_BATTERY_LIGHT_CHARGE, icon_size) : g_data.GetIcon(IDI_BATTERY_DARK_CHARGE, icon_size));
     else
-        hIcon = (dark_mode ? g_data.GetIcon(IDI_BATTERY_LIGHT) : g_data.GetIcon(IDI_BATTERY_DARK));
-    const int icon_size{ g_data.DPI(16) };
+        hIcon = (dark_mode ? g_data.GetIcon(IDI_BATTERY_LIGHT, icon_size) : g_data.GetIcon(IDI_BATTERY_DARK, icon_size));
     CPoint icon_point{ rect.TopLeft() };
-    icon_point.x = rect.left + g_data.DPI(2);
+    icon_point.x = rect.left + static_cast<int>(BATTERY_ICON_BASE_PADDING * unit);
     icon_point.y = rect.top + (rect.Height() - icon_size) / 2;
     ::DrawIconEx(pDC->GetSafeHdc(), icon_point.x, icon_point.y, hIcon, icon_size, icon_size, 0, NULL, DI_NORMAL);
     //填充电量指示
@@ -101,27 +128,27 @@ void CBatteryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mod
     {
         //计算电量指示矩形区域
         Gdiplus::RectF rc_indicater;
-        rc_indicater.X = icon_point.x + g_data.DPIF(1);
-        rc_indicater.Y = icon_point.y + g_data.DPIF(6);
+        rc_indicater.X = icon_point.x + 1.0f * unit;
+        rc_indicater.Y = icon_point.y + 6.0f * unit;
         double percent = g_data.m_sysPowerStatus.BatteryLifePercent;
         //显示充电动画
         if (g_data.m_setting_data.show_charging_animation && g_data.IsAcOnline() && g_data.m_sysPowerStatus.BatteryLifePercent < 100)
         {
             percent = g_data.m_sysPowerStatus.BatteryLifePercent + (battery_percent / 100 * (100 - g_data.m_sysPowerStatus.BatteryLifePercent));
         }
-        float indicater_width = static_cast<float>(g_data.DPIF(11.7f) * percent / 100);
+        float indicater_width = static_cast<float>(11.7f * unit * percent / 100);
         rc_indicater.Width = indicater_width;
-        rc_indicater.Height = g_data.DPIF(3.7f);
+        rc_indicater.Height = 3.7f * unit;
         //充电状态下的电量指示使用图标
         if (g_data.IsAcOnline())
         {
             HICON hFill;
             if (g_data.m_sysPowerStatus.BatteryLifePercent < 20)
-                hFill = g_data.GetIcon(IDI_FILL_CRITICAL);
+                hFill = g_data.GetIcon(IDI_FILL_CRITICAL, icon_size);
             else if (g_data.m_sysPowerStatus.BatteryLifePercent < 60)
-                hFill = g_data.GetIcon(IDI_FILL_LOW);
+                hFill = g_data.GetIcon(IDI_FILL_LOW, icon_size);
             else
-                hFill = g_data.GetIcon(IDI_FILL_HIGH);
+                hFill = g_data.GetIcon(IDI_FILL_HIGH, icon_size);
             //设置剪辑区域
             if (g_data.m_sysPowerStatus.BatteryLifePercent < 100)
             {
@@ -143,14 +170,17 @@ void CBatteryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mod
         {
             CDrawCommon drawer;
             drawer.Create(pDC);
-            drawer.DrawRoundRect(rc_indicater, CGdiPlusTool::COLORREFToGdiplusColor(g_data.GetBatteryColor()), g_data.DPI(1));
+            int corner_radius{ static_cast<int>(1.0f * unit) };
+            if (corner_radius < 1)
+                corner_radius = 1;
+            drawer.DrawRoundRect(rc_indicater, CGdiPlusTool::COLORREFToGdiplusColor(g_data.GetBatteryColor()), corner_radius);
         }
     }
     //绘制电池数值
     if (g_data.m_setting_data.battery_type == BatteryType::NUMBER_BESIDE_ICON)
     {
         CRect rc_text{ rect };
-        rc_text.left = rect.left + icon_size + g_data.DPI(4);
+        rc_text.left = rect.left + icon_size + static_cast<int>(4.0f * unit);
         std::wstring battery_str{ g_data.GetBatteryString() };
         pDC->DrawText(battery_str.c_str(), rc_text, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
     }

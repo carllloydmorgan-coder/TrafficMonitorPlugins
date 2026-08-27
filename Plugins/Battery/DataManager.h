@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <string>
 #include <map>
+#include <utility>
 #include "resource.h"
 
 #define g_data CDataManager::Instance()
@@ -41,7 +42,8 @@ public:
     int DPI(int pixel);
     float DPIF(float pixel);
     int RDPI(int pixel);
-    HICON GetIcon(UINT id);
+    //获取一个图标资源。size为需要的图标尺寸（像素），传入0或负数时使用默认的DPI(16)
+    HICON GetIcon(UINT id, int size = 0);
     bool IsAcOnline() const;        //电源是否已接通
     bool IsCharging() const;        //是否正在充电
 
@@ -49,6 +51,7 @@ public:
     COLORREF GetBatteryColor() const;
 
     SettingData m_setting_data;
+    bool m_draw_taskbar_wnd{ false };   //当前是否正在绘制任务栏窗口（主窗口的皮肤布局尺寸固定，不放大图标）
     SYSTEM_POWER_STATUS m_sysPowerStatus{};   // 系统电量信息
     ULONG_PTR m_gdiplusToken;
 
@@ -56,6 +59,7 @@ private:
     static CDataManager m_instance;
     std::wstring m_config_path;
     std::map<UINT, CString> m_string_table;
-    std::map<UINT, HICON> m_icons;
+    //图标缓存，键为“资源id + 图标尺寸”，同一个图标可以按不同的尺寸缓存
+    std::map<std::pair<UINT, int>, HICON> m_icons;
     int m_dpi{ 96 };
 };

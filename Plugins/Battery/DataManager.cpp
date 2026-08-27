@@ -107,9 +107,14 @@ int CDataManager::RDPI(int pixel)
     return pixel * 96 / m_dpi;
 }
 
-HICON CDataManager::GetIcon(UINT id)
+HICON CDataManager::GetIcon(UINT id, int size)
 {
-    auto iter = m_icons.find(id);
+    //未指定尺寸时使用默认尺寸
+    if (size <= 0)
+        size = DPI(16);
+
+    const std::pair<UINT, int> key{ id, size };
+    auto iter = m_icons.find(key);
     if (iter != m_icons.end())
     {
         return iter->second;
@@ -117,8 +122,9 @@ HICON CDataManager::GetIcon(UINT id)
     else
     {
         AFX_MANAGE_STATE(AfxGetStaticModuleState());
-        HICON hIcon = (HICON)LoadImage(AfxGetInstanceHandle(), MAKEINTRESOURCE(id), IMAGE_ICON, DPI(16), DPI(16), 0);
-        m_icons[id] = hIcon;
+        //按需要的尺寸加载图标，图标资源中包含16~64像素的多个尺寸，这样放大后不会模糊
+        HICON hIcon = (HICON)LoadImage(AfxGetInstanceHandle(), MAKEINTRESOURCE(id), IMAGE_ICON, size, size, 0);
+        m_icons[key] = hIcon;
         return hIcon;
     }
 }
