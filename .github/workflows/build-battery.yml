@@ -1,4 +1,4 @@
-name: Build Battery plugin
+name: Build CpuMonitor plugin
 
 on:
   workflow_dispatch:
@@ -14,8 +14,10 @@ jobs:
       matrix:
         include:
           - platform: x64
+            label: x64
             out_dir: 'Bin\x64\Release'
-          - platform: x86
+          - platform: Win32
+            label: x86
             out_dir: 'Bin\Release'
 
     steps:
@@ -24,12 +26,12 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
 
-      - name: Build Battery plugin
-        run: msbuild TrafficMonitorPlugins.sln -t:Battery -p:Configuration=Release -p:Platform=${{ matrix.platform }} -p:PlatformToolset=v143 -m
+      - name: Build CpuMonitor plugin
+        run: msbuild Plugins\CpuMonitor\CpuMonitor.vcxproj -p:Configuration=Release -p:Platform=${{ matrix.platform }} -p:PlatformToolset=v143 -p:SolutionDir=${{ github.workspace }}\ -m
 
-      - name: Upload Battery.dll
+      - name: Upload CpuMonitor.dll
         uses: actions/upload-artifact@v4
         with:
-          name: Battery_${{ matrix.platform }}
-          path: ${{ matrix.out_dir }}\Battery.dll
+          name: CpuMonitor_${{ matrix.label }}
+          path: ${{ matrix.out_dir }}\CpuMonitor.dll
           if-no-files-found: error
