@@ -13,7 +13,7 @@ namespace
     //电池图标左右两侧的边距（基准尺寸下，单位：像素）
     constexpr float BATTERY_ICON_BASE_PADDING{ 2.0f };
     //电池图标的放大倍数。图标内部的电量指示、数值的位置都会按此倍数一起缩放
-    constexpr float BATTERY_ICON_SCALE{ 4.1f };
+    constexpr float BATTERY_ICON_SCALE{ 3.0f };
     //向右侧间隙借用的像素数（DPI缩放前）。任务栏各项目之间的间隙由主程序的“项目间距”设置决定，
     //图标会向右伸入间隙这么多像素，使电池图标与相邻项目看起来更近。设为0恢复正常间隙。
     constexpr int BATTERY_GAP_BORROW_PIXELS{ 0 };
@@ -123,8 +123,12 @@ void CBatteryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mod
     CDC* pDC = CDC::FromHandle((HDC)hDC);
     //矩形区域
     CRect rect(CPoint(x, y), CSize(w, h));
-    //只在任务栏窗口中放大图标，主窗口的皮肤布局尺寸是固定的，放大后会超出布局
-    const float scale{ g_data.m_draw_taskbar_wnd ? BATTERY_ICON_SCALE : 1.0f };
+    // The icon is enlarged in the taskbar window and in the main window alike.
+    // It can never overflow either, because it is clamped to the height of the
+    // rectangle the caller gives it a few lines below: in the taskbar that is
+    // the taskbar window height, and in the main window it is the skin's
+    // text_height. A skin with a small text_height simply gets a small icon.
+    const float scale{ BATTERY_ICON_SCALE };
     //记录任务栏窗口中本项目的实际高度，供计算宽度时使用
     if (g_data.m_draw_taskbar_wnd && rect.Height() > 0)
         g_data.m_taskbar_item_height = rect.Height();
