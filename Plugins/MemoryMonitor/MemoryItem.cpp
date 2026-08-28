@@ -332,7 +332,8 @@ void CMemoryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode
     if (!centre_content)
         text_rect.left = rect.left + side_padding;
 
-    const UINT text_align{ centre_content ? DT_CENTER : DT_LEFT };
+    const UINT text_align = static_cast<UINT>(
+        centre_content ? DT_CENTER : DT_LEFT);
     const std::wstring usage_text{ g_memory_data.GetUsageString() };
     pDC->DrawText(usage_text.c_str(), text_rect,
         text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
