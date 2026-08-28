@@ -277,10 +277,16 @@ void CCpuItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode)
 
     const std::wstring usage_text{ g_cpu_data.GetUsageString() };
     const std::wstring temperature_text{ g_cpu_data.GetTemperatureString() };
+    // In the taskbar the item is measured to fit its own text, so the two
+    // lines are drawn from the left. In the main window the width comes from
+    // the skin and is fixed at the widest reading, so a short reading would
+    // leave a gap before the next item; right-aligning keeps the spacing
+    // constant whatever the values.
+    const UINT text_align{ g_cpu_data.draw_taskbar_wnd ? DT_LEFT : DT_RIGHT };
     pDC->DrawText(usage_text.c_str(), usage_rect,
-        DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
     pDC->DrawText(temperature_text.c_str(), temperature_rect,
-        DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
     pDC->SetBkMode(old_bk_mode);
     if (old_font != nullptr)
