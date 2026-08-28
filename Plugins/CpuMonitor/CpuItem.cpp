@@ -282,7 +282,8 @@ void CCpuItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode)
     // the skin and is fixed at the widest reading, so a short reading would
     // leave a gap before the next item; right-aligning keeps the spacing
     // constant whatever the values.
-    const UINT text_align{ g_cpu_data.draw_taskbar_wnd ? DT_LEFT : DT_RIGHT };
+    const UINT text_align = static_cast<UINT>(
+        g_cpu_data.draw_taskbar_wnd ? DT_LEFT : DT_RIGHT);
     pDC->DrawText(usage_text.c_str(), usage_rect,
         text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
     pDC->DrawText(temperature_text.c_str(), temperature_rect,
