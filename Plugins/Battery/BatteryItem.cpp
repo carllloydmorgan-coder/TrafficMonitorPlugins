@@ -209,6 +209,13 @@ void CBatteryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mod
         CRect rc_text{ rect };
         rc_text.left = rect.left + icon_size + static_cast<int>(4.0f * unit);
         std::wstring battery_str{ g_data.GetBatteryString() };
-        pDC->DrawText(battery_str.c_str(), rc_text, DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        // In the taskbar the item is measured to fit its own text, so the
+        // number is drawn from the left. In the main window the width comes
+        // from the skin and is fixed at the widest reading, so a short reading
+        // would leave a gap before the next item; right-aligning it keeps the
+        // spacing constant whatever the value.
+        const UINT text_align{ g_data.m_draw_taskbar_wnd ? DT_LEFT : DT_RIGHT };
+        pDC->DrawText(battery_str.c_str(), rc_text,
+            text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
     }
 }
