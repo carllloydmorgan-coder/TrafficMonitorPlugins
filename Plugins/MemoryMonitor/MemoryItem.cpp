@@ -302,8 +302,18 @@ void CMemoryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode
     const int icon_width{ GetIconWidth(icon_height) };
     const int line_height{ rect.Height() - icon_height };
 
-    // the icon, centred across the item
-    const int icon_left{ rect.left + (rect.Width() - icon_width) / 2 };
+    // In the taskbar the item is measured to fit its own content, so the icon
+    // and the percentage are centred in it. In the main window the width comes
+    // from the skin and is fixed at the widest reading, so centring a short
+    // reading would push the content away from the item on its left;
+    // left-aligning keeps the spacing constant whatever the value.
+    const bool centre_content{ g_memory_data.draw_taskbar_wnd };
+    const int side_padding{ GetSidePadding(rect.Height()) };
+
+    // the icon
+    const int icon_left{ centre_content
+        ? rect.left + (rect.Width() - icon_width) / 2
+        : rect.left + side_padding };
     DrawMemoryIcon(pDC->GetSafeHdc(), icon_left, rect.top, icon_height);
 
     if (line_height <= 0)
@@ -319,10 +329,13 @@ void CMemoryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode
 
     CRect text_rect{ rect };
     text_rect.top = rect.top + icon_height;
+    if (!centre_content)
+        text_rect.left = rect.left + side_padding;
 
+    const UINT text_align{ centre_content ? DT_CENTER : DT_LEFT };
     const std::wstring usage_text{ g_memory_data.GetUsageString() };
     pDC->DrawText(usage_text.c_str(), text_rect,
-        DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
     pDC->SetBkMode(old_bk_mode);
     if (old_font != nullptr)
