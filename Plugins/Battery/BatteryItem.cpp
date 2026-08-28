@@ -214,7 +214,8 @@ void CBatteryItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mod
         // from the skin and is fixed at the widest reading, so a short reading
         // would leave a gap before the next item; right-aligning it keeps the
         // spacing constant whatever the value.
-        const UINT text_align{ g_data.m_draw_taskbar_wnd ? DT_LEFT : DT_RIGHT };
+        const UINT text_align = static_cast<UINT>(
+            g_data.m_draw_taskbar_wnd ? DT_LEFT : DT_RIGHT);
         pDC->DrawText(battery_str.c_str(), rc_text,
             text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
     }
