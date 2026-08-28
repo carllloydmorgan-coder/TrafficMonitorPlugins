@@ -1,0 +1,37 @@
+yaml
+
+name: Build CpuMonitor plugin
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['**']
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: x64
+            out_dir: 'Bin\x64\Release'
+          - platform: x86
+            out_dir: 'Bin\Release'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build CpuMonitor plugin
+        run: msbuild Plugins\CpuMonitor\CpuMonitor.vcxproj -p:Configuration=Release -p:Platform=${{ matrix.platform }} -p:PlatformToolset=v143 -p:SolutionDir=${{ github.workspace }}\ -m
+
+      - name: Upload CpuMonitor.dll
+        uses: actions/upload-artifact@v4
+        with:
+          name: CpuMonitor_${{ matrix.platform }}
+          path: ${{ matrix.out_dir }}\CpuMonitor.dll
+          if-no-files-found: error
