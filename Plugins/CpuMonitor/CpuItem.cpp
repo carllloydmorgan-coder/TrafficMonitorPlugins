@@ -22,6 +22,10 @@ namespace
     constexpr float CPU_ICON_PADDING_RATIO{ 2.0f / 16.0f };
     //图标与文字之间的间隔
     constexpr float CPU_TEXT_GAP_RATIO{ 4.0f / 16.0f };
+    // The same gap in the main window. It is smaller there so the readings
+    // sit as close to the icon as the battery's number does, which matters
+    // more in a narrow floating bar. The taskbar keeps its original spacing.
+    constexpr float CPU_TEXT_GAP_RATIO_MAIN{ 2.0f / 16.0f };
     //没有绘制过时假定的项目高度，第一次绘制后会使用实际高度
     constexpr int CPU_DEFAULT_ITEM_HEIGHT{ 40 };
 
@@ -258,7 +262,9 @@ void CCpuItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode)
 
     //文字区域：上一行为使用率，下一行为温度
     CRect text_rect{ rect };
-    text_rect.left = icon_left + icon_size + static_cast<int>(CPU_TEXT_GAP_RATIO * unit);
+    const float text_gap_ratio = (g_cpu_data.draw_taskbar_wnd
+        ? CPU_TEXT_GAP_RATIO : CPU_TEXT_GAP_RATIO_MAIN);
+    text_rect.left = icon_left + icon_size + static_cast<int>(text_gap_ratio * unit);
     if (text_rect.left >= text_rect.right)
         return;
 
@@ -277,17 +283,14 @@ void CCpuItem::DrawItem(void* hDC, int x, int y, int w, int h, bool dark_mode)
 
     const std::wstring usage_text{ g_cpu_data.GetUsageString() };
     const std::wstring temperature_text{ g_cpu_data.GetTemperatureString() };
-    // In the taskbar the item is measured to fit its own text, so the two
-    // lines are drawn from the left. In the main window the width comes from
-    // the skin and is fixed at the widest reading, so a short reading would
-    // leave a gap before the next item; right-aligning keeps the spacing
-    // constant whatever the values.
-    const UINT text_align = static_cast<UINT>(
-        g_cpu_data.draw_taskbar_wnd ? DT_LEFT : DT_RIGHT);
+    // Drawn from the left, so the readings always sit the same short distance
+    // from the icon. The slot in the main window is fixed at the width of the
+    // widest reading, so a shorter reading leaves its spare room at the end of
+    // the item rather than between the icon and the numbers.
     pDC->DrawText(usage_text.c_str(), usage_rect,
-        text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
     pDC->DrawText(temperature_text.c_str(), temperature_rect,
-        text_align | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
+        DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
 
     pDC->SetBkMode(old_bk_mode);
     if (old_font != nullptr)
